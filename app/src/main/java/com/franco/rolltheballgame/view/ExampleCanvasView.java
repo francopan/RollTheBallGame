@@ -12,7 +12,7 @@ import android.graphics.Region;
 import android.util.DisplayMetrics;
 import android.view.View;
 
-public class MazeView extends View {
+public class ExampleCanvasView extends View {
 
     Paint mPaint, otherPaint, outerPaint, mTextPaint;
     RectF mRectF;
@@ -22,7 +22,7 @@ public class MazeView extends View {
 
     Path mPath;
 
-    public MazeView(Context context) {
+    public ExampleCanvasView(Context context) {
         super(context);
 
         mPaint = new Paint();
