@@ -1,11 +1,12 @@
 package com.franco.rolltheballgame;
 
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.widget.LinearLayout;
 
-import com.franco.rolltheballgame.view.ExampleCanvasView;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.franco.rolltheballgame.view.MazeView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -17,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         linearLayout = findViewById(R.id.linearLayout);
-        linearLayout.addView(new ExampleCanvasView(this));
+        linearLayout.addView(new MazeView(this, this.getWindow(), new Matrix(), 0,0,0,0));
+
     }
 }
