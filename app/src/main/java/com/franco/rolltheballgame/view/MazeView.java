@@ -3,28 +3,23 @@ package com.franco.rolltheballgame.view;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.DisplayMetrics;
 import android.view.View;
-import android.view.Window;
 
 public class MazeView extends View {
 
-    private Window window;
-
-    private Matrix maze;
+    private int maze[][];
     private Paint linePaint, ballPaint, wallPaint;
 
-    private float xEntry, yEntry, xExit, yExit;
+    private int xEntry, yEntry, xExit, yExit;
     private float xBall, yBall;
 
     private DisplayMetrics displayMetrics;
 
-    public MazeView(Context context, Window window, Matrix maze, float xEntry, float yEntry, float xExit, float yExit) {
+    public MazeView(Context context, int maze[][], int xEntry, int yEntry, int xExit, int yExit) {
         super(context);
-        this.window = window;
         this.maze = maze;
         this.xEntry = xEntry;
         this.yEntry = yEntry;
@@ -33,7 +28,7 @@ public class MazeView extends View {
 
         // ball
         this.xBall = xEntry;
-        this.yBall = yBall;
+        this.yBall = yEntry;
 
         // paints
         linePaint = new Paint();
