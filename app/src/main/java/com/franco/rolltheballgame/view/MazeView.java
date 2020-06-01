@@ -66,6 +66,23 @@ public class MazeView extends View {
 
         RectF mRectF = new RectF(left, top, right, bottom);
         canvas.drawRect(mRectF, linePaint);
+
+        for (int x = 0; x < maze[0].length; x++) {
+            for (int y = 0; y < maze[0].length; y++) {
+                if (maze[x][y] == 1) {
+                    this.drawInnerSquares(x,y, Float.valueOf(maze[0].length), canvas, wallPaint);
+                }
+            }
+        }
+    }
+
+    private void drawInnerSquares(Integer x, Integer y, Float matrixSize, Canvas canvas, Paint paint) {
+        float startX = (y/matrixSize) *  this.getRight();
+        float stopX = ((y+1)/matrixSize) *  this.getRight();
+        float startY = (x/matrixSize) * this.getBottom();
+        float stopY = ((x+1)/matrixSize) * this.getBottom();
+        RectF mRectF = new RectF(startX, startY, stopX, stopY);
+        canvas.drawRect(mRectF, paint);
     }
 
 }

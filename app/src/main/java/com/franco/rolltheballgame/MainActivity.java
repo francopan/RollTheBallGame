@@ -29,5 +29,6 @@ public class MainActivity extends AppCompatActivity {
 
         linearLayout = findViewById(R.id.linearLayout);
         linearLayout.addView(new MazeView(this, maze, 0,0,0,0));
+
     }
 }
