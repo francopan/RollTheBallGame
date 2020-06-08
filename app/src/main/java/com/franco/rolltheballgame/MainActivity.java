@@ -39,7 +39,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         linearLayout = findViewById(R.id.linearLayout);
-        linearLayout.addView(new MazeView(this, sensorManager, accelerometer, maze, 0, 0, 0, 0));
+        linearLayout.addView(new MazeView(this, sensorManager, accelerometer, maze,
+                6, 0, 1, 7));
 
     }
 }

@@ -31,10 +31,24 @@ public class PaintStyles {
         return paint;
     }
 
+    public static Paint getBeginPaint() {
+        Paint paint = new Paint();
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.BLUE);
+        return paint;
+    }
+
+    public static Paint getEndPaint() {
+        Paint paint = new Paint();
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.RED);
+        return paint;
+    }
+
     public static Paint getBallPaint() {
         Paint paint = new Paint();
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.YELLOW);
+        paint.setColor(Color.BLACK);
         return paint;
     }
 
