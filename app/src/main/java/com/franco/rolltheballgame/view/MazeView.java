@@ -10,6 +10,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.DisplayMetrics;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.activity.ComponentActivity;
 import androidx.lifecycle.Lifecycle;
@@ -22,6 +23,7 @@ public class MazeView extends View implements LifecycleObserver {
 
     private final int maze[][];
     private final float lines, cols;
+    private final Runnable callback;
     private Paint backgroundPaint, linePaint, ballPaint, wallPaint, beginPaint, endPaint;
 
     private int xEntry, yEntry, xExit, yExit;
@@ -31,13 +33,25 @@ public class MazeView extends View implements LifecycleObserver {
     private final SensorManager sensorManager;
     private Sensor accelerometer;
     private SensorEventListener listener;
-    private long previoutTimestamp = 0l;
+    private long previousTimestamp = 0l;
 
     // others
     private DisplayMetrics displayMetrics;
 
+    private boolean finished = false;
+
     public MazeView(ComponentActivity context, SensorManager sensorManager, Sensor accelerometer,
                     int[][] maze, int xEntry, int yEntry, int xExit, int yExit) {
+        this(context, sensorManager, accelerometer, maze, xEntry,yEntry, xExit, yExit,
+                () -> {
+                    Toast.makeText(context, "Voce ganhou!",
+                            Toast.LENGTH_LONG).show();
+                });
+    }
+
+    public MazeView(ComponentActivity context, SensorManager sensorManager, Sensor accelerometer,
+                    int[][] maze, int xEntry, int yEntry, int xExit, int yExit,
+                Runnable winCallback) {
         super(context);
         this.maze = maze;
         this.lines = this.maze.length;
@@ -48,6 +62,7 @@ public class MazeView extends View implements LifecycleObserver {
         this.yExit = yExit;
         this.xBall = -1;
         this.yBall = -1;
+        this.callback = winCallback;
 
         // paints
         backgroundPaint = PaintStyles.getBackgroundPaint();
@@ -78,8 +93,10 @@ public class MazeView extends View implements LifecycleObserver {
 
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     protected void onResume() {
-        sensorManager.registerListener(listener, accelerometer,
-                SensorManager.SENSOR_DELAY_UI);
+        if (!finished) {
+            sensorManager.registerListener(listener, accelerometer,
+                    SensorManager.SENSOR_DELAY_UI);
+        }
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
@@ -95,42 +112,91 @@ public class MazeView extends View implements LifecycleObserver {
         float y = event.values[1];  // positive=down bottom phone, negative=down top phone
         float z = event.values[2];  // dont used
         long timestamp = event.timestamp;   // calc how much the ball has to move between frames
-        long millisFromLast = (timestamp - this.previoutTimestamp) / 100_000;
-        this.previoutTimestamp = timestamp;
+        long millisFromLast = (timestamp - this.previousTimestamp) / 100_000;
+        this.previousTimestamp = timestamp;
+        float ballRadius = getBallRadius();
+        float maxDelta = ballRadius * 2;
 
         // threshold min inclination
         if (Math.abs(x) < 1.2) x = 0; else x -= Math.signum(x) * 1.2;
         if (Math.abs(y) < 1.2) y = 0; else y -= Math.signum(y) * 1.2;
-
         if (x == 0 && y == 0) return;
 
-        // TODO implements ball limits positions
-
-        int orientation = getResources().getConfiguration().orientation;
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            this.xBall += y * millisFromLast * 0.03;
-            this.yBall += x * millisFromLast * 0.03;
+        // calc delta
+        float xBallDelta, yBallDelta;
+        float xDelta = Math.max(-maxDelta, Math.min(maxDelta, x * millisFromLast * 0.03f));
+        float yDelta = Math.max(-maxDelta, Math.min(maxDelta, y * millisFromLast * 0.03f));
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            xBallDelta = yDelta;
+            yBallDelta = xDelta;
         } else {
-            this.xBall += x * millisFromLast * 0.03;
-            this.yBall += y * millisFromLast * 0.03;
+            xBallDelta = xDelta;
+            yBallDelta = yDelta;
         }
 
-        this.invalidate();
+        // maze limit
+        int lineMazePos = (int) pxToLine(this.yBall);
+        int colMazePos = (int) pxToCol(this.xBall);
+        if (x > 0) {
+            int lineMazePosRadius = (int) pxToLine(this.yBall + ballRadius + yBallDelta);
+            if (lineMazePos != lineMazePosRadius && maze[lineMazePosRadius][colMazePos] > 0) {
+                yBallDelta = (lineToPx(lineMazePosRadius) - ballRadius) - this.yBall;
+            }
+        } else {
+            int lineMazePosRadius = (int) pxToLine(this.yBall - ballRadius + yBallDelta);
+            if (lineMazePos != lineMazePosRadius && maze[lineMazePosRadius][colMazePos] > 0) {
+                yBallDelta = (lineToPx(lineMazePos) + ballRadius) - this.yBall;
+            }
+        }
+        if (y > 0) {
+            int colMazePosRadius = (int) pxToCol(this.xBall + ballRadius + xBallDelta);
+            if (colMazePos != colMazePosRadius && maze[lineMazePos][colMazePosRadius] > 0) {
+                xBallDelta = (colToPx(colMazePosRadius) - ballRadius) - this.xBall;
+            }
+        } else {
+            int colMazePosRadius = (int) pxToCol(this.xBall - ballRadius + xBallDelta);
+            if (colMazePos != colMazePosRadius && maze[lineMazePos][colMazePosRadius] > 0) {
+                xBallDelta = (colToPx(colMazePos) + ballRadius) - this.xBall;
+            }
+        }
+
+        // move
+        this.yBall += yBallDelta;
+        this.xBall += xBallDelta;
+
+        // screen limit
+        this.xBall = Math.max(ballRadius, Math.min(this.getRight() - ballRadius, this.xBall));
+        this.yBall = Math.max(ballRadius, Math.min(this.getBottom() - ballRadius, this.yBall));
+
+        // check win
+        if (this.xExit == (int) pxToLine(this.yBall) && this.yExit == (int) pxToCol(this.xBall)) {
+            this.finished = true;
+            onPause();
+            callback.run();
+        } else {
+            // redraw()
+            this.invalidate();
+        }
+
     }
 
 //    -------------------------------------------------------------------
 //    draw labirint
 
-    private float pxFromDp(final float dp) {
-        return dp * this.displayMetrics.density;
-    }
-
     private float lineToPx(float line) {
-        return (line / lines) * this.getBottom();
+        return Math.max(0, Math.min(this.getBottom()-1, (line / lines) * this.getBottom()));
     }
 
     private float colToPx(float col) {
-        return (col / cols) * this.getRight();
+        return Math.max(0, Math.min(this.getRight()-1, (col / cols) * this.getRight()));
+    }
+
+    private float pxToLine(float px) {
+        return Math.max(0, Math.min(lines-1, (px / this.getBottom()) * lines));
+    }
+
+    private float pxToCol(float px) {
+        return Math.max(0, Math.min(cols-1, (px / this.getRight()) * cols));
     }
 
     private float getBallRadius() {
