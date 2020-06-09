@@ -12,24 +12,38 @@ import com.franco.rolltheballgame.view.MazeView;
 
 public class MainActivity extends AppCompatActivity {
 
-    int maze[][] = new int[][] {
-            {1,1,1,1,1,1,1,1},
-            {1,0,0,0,0,1,0,0},
-            {1,0,1,1,0,1,0,1},
-            {1,0,1,1,0,1,0,1},
-            {1,0,1,0,0,1,0,1},
-            {1,0,1,0,1,1,0,1},
-            {0,0,1,0,0,0,0,1},
-            {1,1,1,1,1,1,1,1}
-    };
+    int maze[][];
+
+//            new int[][] {
+//            {1,1,1,1,1,1,1,1},
+//            {1,0,0,0,0,1,0,0},
+//            {1,0,1,1,0,1,0,1},
+//            {1,0,1,1,0,1,0,1},
+//            {1,0,1,0,0,1,0,1},
+//            {1,0,1,0,1,1,0,1},
+//            {0,0,1,0,0,0,0,1},
+//            {1,1,1,1,1,1,1,1}
+//    };
+
 
     LinearLayout linearLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        MazeGenerator mazeGenerator = new MazeGenerator(8,8);
+        this.maze = mazeGenerator.getMaze();
+        mazeGenerator.display();
 
+        for (int i = 0;i< maze[0].length; i++){
+            for (int j = 0;j< maze[0].length; j++){
+                System.out.print(maze[i][j]);
+            }
+            System.out.print("\n");
+        }
+
+
+        setContentView(R.layout.activity_main);
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         if (accelerometer == null) {
