@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.PlaybackParams;
 import android.net.Uri;
 import android.os.IBinder;
 
@@ -30,8 +31,10 @@ public class MusicService extends Service {
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         try {
             String filename = "android.resource://" + getPackageName() + "/raw/bgsong.mp3";
-            mediaPlayer.setDataSource(filename);
-            mediaPlayer.prepare(); // might take long! (for buffering, etc)
+            mediaPlayer.setDataSource("https://freesound.org/data/previews/479/479859_10218985-lq.mp3");
+            mediaPlayer.prepare();
+
+            PlaybackParams p = new PlaybackParams();
             mediaPlayer.setLooping(true);
         } catch (IOException e) {
             e.printStackTrace();

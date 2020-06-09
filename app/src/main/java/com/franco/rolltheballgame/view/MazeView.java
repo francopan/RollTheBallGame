@@ -1,5 +1,6 @@
 package com.franco.rolltheballgame.view;
 
+import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -8,6 +9,9 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.MediaPlayer;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Toast;
@@ -18,6 +22,11 @@ import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
 import com.franco.rolltheballgame.misc.PaintStyles;
+import com.franco.rolltheballgame.service.MusicService;
+
+import java.io.IOException;
+
+import static androidx.core.content.ContextCompat.getSystemService;
 
 public class MazeView extends View implements LifecycleObserver {
 
@@ -37,21 +46,25 @@ public class MazeView extends View implements LifecycleObserver {
 
     // others
     private DisplayMetrics displayMetrics;
+    private Vibrator v;
+
 
     private boolean finished = false;
 
     public MazeView(ComponentActivity context, SensorManager sensorManager, Sensor accelerometer,
-                    int[][] maze, int xEntry, int yEntry, int xExit, int yExit) {
+                    int[][] maze, int xEntry, int yEntry, int xExit, int yExit, Vibrator vibrator) {
         this(context, sensorManager, accelerometer, maze, xEntry,yEntry, xExit, yExit,
                 () -> {
+
                     Toast.makeText(context, "Voce ganhou!",
                             Toast.LENGTH_LONG).show();
-                });
+                }, vibrator);
+        this.v = vibrator;
     }
 
     public MazeView(ComponentActivity context, SensorManager sensorManager, Sensor accelerometer,
                     int[][] maze, int xEntry, int yEntry, int xExit, int yExit,
-                Runnable winCallback) {
+                Runnable winCallback, Vibrator vibrator) {
         super(context);
         this.maze = maze;
         this.lines = this.maze.length;
@@ -63,6 +76,7 @@ public class MazeView extends View implements LifecycleObserver {
         this.xBall = -1;
         this.yBall = -1;
         this.callback = winCallback;
+        this.v = vibrator;
 
         // paints
         backgroundPaint = PaintStyles.getBackgroundPaint();
@@ -141,22 +155,26 @@ public class MazeView extends View implements LifecycleObserver {
             int lineMazePosRadius = (int) pxToLine(this.yBall + ballRadius + yBallDelta);
             if (lineMazePos != lineMazePosRadius && maze[lineMazePosRadius][colMazePos] > 0) {
                 yBallDelta = (lineToPx(lineMazePosRadius) - ballRadius) - this.yBall;
+                this.v.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
             }
         } else {
             int lineMazePosRadius = (int) pxToLine(this.yBall - ballRadius + yBallDelta);
             if (lineMazePos != lineMazePosRadius && maze[lineMazePosRadius][colMazePos] > 0) {
                 yBallDelta = (lineToPx(lineMazePos) + ballRadius) - this.yBall;
+                this.v.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
             }
         }
         if (y > 0) {
             int colMazePosRadius = (int) pxToCol(this.xBall + ballRadius + xBallDelta);
             if (colMazePos != colMazePosRadius && maze[lineMazePos][colMazePosRadius] > 0) {
                 xBallDelta = (colToPx(colMazePosRadius) - ballRadius) - this.xBall;
+                this.v.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
             }
         } else {
             int colMazePosRadius = (int) pxToCol(this.xBall - ballRadius + xBallDelta);
             if (colMazePos != colMazePosRadius && maze[lineMazePos][colMazePosRadius] > 0) {
                 xBallDelta = (colToPx(colMazePos) + ballRadius) - this.xBall;
+                this.v.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
             }
         }
 
