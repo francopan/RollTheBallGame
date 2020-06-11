@@ -1,8 +1,5 @@
 package com.franco.rolltheballgame.view;
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,18 +9,16 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.media.MediaPlayer;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.DisplayMetrics;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.activity.ComponentActivity;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
-import com.franco.rolltheballgame.MainActivity;
+
 import com.franco.rolltheballgame.misc.PaintStyles;
 
 public class MazeView extends View implements LifecycleObserver {
@@ -44,26 +39,17 @@ public class MazeView extends View implements LifecycleObserver {
 
     // others
     private DisplayMetrics displayMetrics;
-    private Vibrator v;
+    private Vibrator vibrator;
 
-
+    private boolean ready = false;
     private boolean finished = false;
 
     public MazeView(ComponentActivity context, SensorManager sensorManager, Sensor accelerometer,
-                    int[][] maze, int xEntry, int yEntry, int xExit, int yExit, Vibrator vibrator, int currentLevel) {
-        this(context, sensorManager, accelerometer, maze, xEntry,yEntry, xExit, yExit,
-                () -> {
-
-                    Toast.makeText(context, "Parabéns!",
-                            Toast.LENGTH_LONG).show();
-                }, vibrator, currentLevel);
-        this.v = vibrator;
-    }
-
-    public MazeView(ComponentActivity context, SensorManager sensorManager, Sensor accelerometer,
-                    int[][] maze, int xEntry, int yEntry, int xExit, int yExit,
-                Runnable winCallback, Vibrator vibrator, int currentLevel) {
+                    Vibrator vibrator, Runnable winCallback, int[][] maze, int xEntry, int yEntry, int xExit, int yExit,
+                    int currentLevel) {
         super(context);
+
+        // maze
         this.maze = maze;
         this.lines = this.maze.length;
         this.cols = this.maze[0].length;
@@ -73,8 +59,6 @@ public class MazeView extends View implements LifecycleObserver {
         this.yExit = yExit;
         this.xBall = -1;
         this.yBall = -1;
-        this.callback = winCallback;
-        this.v = vibrator;
         this.currentLevel = currentLevel;
 
         // paints
@@ -88,16 +72,20 @@ public class MazeView extends View implements LifecycleObserver {
         // sensors
         this.sensorManager = sensorManager;
         this.accelerometer = accelerometer;
+        this.vibrator = vibrator;
         listener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent event) {
-               updateBall(event);
+                updateBall(event);
             }
 
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
             }
         };
+
+        // callback
+        this.callback = winCallback;
 
         // others
         displayMetrics = this.getContext().getResources().getDisplayMetrics();
@@ -122,6 +110,8 @@ public class MazeView extends View implements LifecycleObserver {
 //    sensor controls
 
     private void updateBall(SensorEvent event) {
+        if (!this.ready) return;
+
         float x = event.values[0];  // positive=down left phone, negative=down right phone
         float y = event.values[1];  // positive=down bottom phone, negative=down top phone
         float z = event.values[2];  // dont used
@@ -155,26 +145,26 @@ public class MazeView extends View implements LifecycleObserver {
             int lineMazePosRadius = (int) pxToLine(this.yBall + ballRadius + yBallDelta);
             if (lineMazePos != lineMazePosRadius && maze[lineMazePosRadius][colMazePos] > 0) {
                 yBallDelta = (lineToPx(lineMazePosRadius) - ballRadius) - this.yBall;
-                this.v.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
+                this.vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
             }
         } else {
             int lineMazePosRadius = (int) pxToLine(this.yBall - ballRadius + yBallDelta);
             if (lineMazePos != lineMazePosRadius && maze[lineMazePosRadius][colMazePos] > 0) {
                 yBallDelta = (lineToPx(lineMazePos) + ballRadius) - this.yBall;
-                this.v.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
+                this.vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
             }
         }
         if (y > 0) {
             int colMazePosRadius = (int) pxToCol(this.xBall + ballRadius + xBallDelta);
             if (colMazePos != colMazePosRadius && maze[lineMazePos][colMazePosRadius] > 0) {
                 xBallDelta = (colToPx(colMazePosRadius) - ballRadius) - this.xBall;
-                this.v.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
+                this.vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
             }
         } else {
             int colMazePosRadius = (int) pxToCol(this.xBall - ballRadius + xBallDelta);
             if (colMazePos != colMazePosRadius && maze[lineMazePos][colMazePosRadius] > 0) {
                 xBallDelta = (colToPx(colMazePos) + ballRadius) - this.xBall;
-                this.v.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
+                this.vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
             }
         }
 
@@ -191,8 +181,6 @@ public class MazeView extends View implements LifecycleObserver {
             this.finished = true;
             onPause();
             callback.run();
-            MainActivity activity = (MainActivity)getContext();
-            activity.wonGame();
         } else {
             // redraw()
             this.invalidate();
@@ -263,6 +251,9 @@ public class MazeView extends View implements LifecycleObserver {
 
         // Draw Level Number
         drawLevelNumber(canvas);
+
+        // ready flag
+        this.ready = true;
     }
 
     private void drawInnerSquares(int line, int col, Canvas canvas, Paint paint) {

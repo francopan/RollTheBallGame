@@ -5,11 +5,9 @@ import android.content.res.AssetFileDescriptor;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.view.View;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -18,10 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.franco.rolltheballgame.view.MazeView;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-
-import static androidx.core.content.ContextCompat.getSystemService;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -107,7 +102,16 @@ public class MainActivity extends AppCompatActivity {
         this.makeGameView(currentLevel);
     }
 
-    public void wonGame() {
+    private void makeGameView(int currentLevel) {
+        linearLayout = findViewById(R.id.linearLayout);
+        linearLayout.removeAllViews();
+        linearLayout.addView(new MazeView(this, sensorManager, accelerometer, v, this::wonGame, this.maps.get(currentLevel - 1),
+                6, 0, 1, 7, currentLevel));
+        mp.start();
+    }
+
+    private void wonGame() {
+        Toast.makeText(this, "Parabéns!", Toast.LENGTH_LONG).show();
         mp2.start();
         if (currentLevel == 3) {
             this.finish();
@@ -115,14 +119,6 @@ public class MainActivity extends AppCompatActivity {
             this.currentLevel++;
             this.makeGameView(currentLevel);
         }
-    }
-
-    private void makeGameView(int currentLevel) {
-        linearLayout = findViewById(R.id.linearLayout);
-        linearLayout.removeAllViews();
-        linearLayout.addView(new MazeView(this, sensorManager, accelerometer, this.maps.get(currentLevel - 1),
-                6, 0, 1, 7, v, currentLevel));
-        mp.start();
     }
 
     private void resetGame(View view) {
