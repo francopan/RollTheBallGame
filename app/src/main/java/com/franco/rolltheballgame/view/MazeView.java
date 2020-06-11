@@ -219,8 +219,6 @@ public class MazeView extends View implements LifecycleObserver {
         int left = this.getLeft();
         int right = this.getRight();
 
-        // TODO FIX esse sistemas de coordenadas. mt confuso....
-
         // initialize ball
         if (xBall == -1) { // not initialized
             this.xBall = colToPx(yEntry + 0.5f);
