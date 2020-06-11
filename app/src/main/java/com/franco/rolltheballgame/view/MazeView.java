@@ -1,8 +1,11 @@
 package com.franco.rolltheballgame.view;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.hardware.Sensor;
@@ -20,13 +23,8 @@ import androidx.activity.ComponentActivity;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
-
+import com.franco.rolltheballgame.MainActivity;
 import com.franco.rolltheballgame.misc.PaintStyles;
-import com.franco.rolltheballgame.service.MusicService;
-
-import java.io.IOException;
-
-import static androidx.core.content.ContextCompat.getSystemService;
 
 public class MazeView extends View implements LifecycleObserver {
 
@@ -35,7 +33,7 @@ public class MazeView extends View implements LifecycleObserver {
     private final Runnable callback;
     private Paint backgroundPaint, linePaint, ballPaint, wallPaint, beginPaint, endPaint;
 
-    private int xEntry, yEntry, xExit, yExit;
+    private int xEntry, yEntry, xExit, yExit, currentLevel;
     private float xBall, yBall;
 
     // sensors
@@ -52,19 +50,19 @@ public class MazeView extends View implements LifecycleObserver {
     private boolean finished = false;
 
     public MazeView(ComponentActivity context, SensorManager sensorManager, Sensor accelerometer,
-                    int[][] maze, int xEntry, int yEntry, int xExit, int yExit, Vibrator vibrator) {
+                    int[][] maze, int xEntry, int yEntry, int xExit, int yExit, Vibrator vibrator, int currentLevel) {
         this(context, sensorManager, accelerometer, maze, xEntry,yEntry, xExit, yExit,
                 () -> {
 
-                    Toast.makeText(context, "Voce ganhou!",
+                    Toast.makeText(context, "Parabéns!",
                             Toast.LENGTH_LONG).show();
-                }, vibrator);
+                }, vibrator, currentLevel);
         this.v = vibrator;
     }
 
     public MazeView(ComponentActivity context, SensorManager sensorManager, Sensor accelerometer,
                     int[][] maze, int xEntry, int yEntry, int xExit, int yExit,
-                Runnable winCallback, Vibrator vibrator) {
+                Runnable winCallback, Vibrator vibrator, int currentLevel) {
         super(context);
         this.maze = maze;
         this.lines = this.maze.length;
@@ -77,6 +75,7 @@ public class MazeView extends View implements LifecycleObserver {
         this.yBall = -1;
         this.callback = winCallback;
         this.v = vibrator;
+        this.currentLevel = currentLevel;
 
         // paints
         backgroundPaint = PaintStyles.getBackgroundPaint();
@@ -92,7 +91,7 @@ public class MazeView extends View implements LifecycleObserver {
         listener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent event) {
-                updateBall(event);
+               updateBall(event);
             }
 
             @Override
@@ -112,6 +111,7 @@ public class MazeView extends View implements LifecycleObserver {
                     SensorManager.SENSOR_DELAY_UI);
         }
     }
+
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     protected void onPause() {
@@ -191,6 +191,8 @@ public class MazeView extends View implements LifecycleObserver {
             this.finished = true;
             onPause();
             callback.run();
+            MainActivity activity = (MainActivity)getContext();
+            activity.wonGame();
         } else {
             // redraw()
             this.invalidate();
@@ -258,6 +260,9 @@ public class MazeView extends View implements LifecycleObserver {
 
         // paint ball
         canvas.drawCircle(xBall, yBall, getBallRadius(), ballPaint);
+
+        // Draw Level Number
+        drawLevelNumber(canvas);
     }
 
     private void drawInnerSquares(int line, int col, Canvas canvas, Paint paint) {
@@ -267,6 +272,13 @@ public class MazeView extends View implements LifecycleObserver {
         float stopY = lineToPx(line + 1);
         RectF mRectF = new RectF(startX, startY, stopX, stopY);
         canvas.drawRect(mRectF, paint);
+    }
+
+    private void drawLevelNumber(Canvas canvas) {
+        Paint paint = new Paint();
+        paint.setColor(Color.YELLOW);
+        paint.setTextSize(80);
+        canvas.drawText("Lv. " + this.currentLevel, 10, 60, paint);
     }
 
 }
